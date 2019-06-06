@@ -10,6 +10,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -25,6 +26,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.tasks.OnSuccessListener;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback,
         GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
@@ -43,6 +45,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private FusedLocationProviderClient locationClient;
     private LocationRequest request;
     private LocationCallback callback;
+
+    //add new field
+    private LatLng nowmylocation;
+    private int firstsetup;
 
     private enum State {
         STOPPED,
@@ -78,6 +84,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         request.setFastestInterval(5000L);
         request.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
 
+        nowmylocation = null;
+        firstsetup = 0;
+
         callback = new LocationCallback() {
             @Override
             public void onLocationResult(LocationResult locationResult) {
@@ -88,12 +97,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
                 Location location = locationResult.getLastLocation();
                 LatLng ll = new LatLng(location.getLatitude(), location.getLongitude());
+                nowmylocation = ll;
                 infoView.setText(getString(R.string.latlng_format, ll.latitude, ll.longitude));
                 if (map == null) {
                     Log.d(TAG, "onLocationResult: map == null");
                     return;
                 }
-                map.animateCamera(CameraUpdateFactory.newLatLng(ll));
+                if(firstsetup == 0){
+                    firstsetup = 1;
+                    map.animateCamera(CameraUpdateFactory.newLatLng(ll));
+                }
             }
         };
     }
@@ -188,5 +201,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         Log.d(TAG, "stopLocationUpdate");
         locationClient.removeLocationUpdates(callback);
         state = State.STOPPED;
+    }
+
+    //when button is pushed
+    public void onClickMovingPresentLocationButton(View v){
+        MovingMapMyLocation();
+    }
+
+    //add new method
+    public void MovingMapMyLocation(){
+        if (map == null) {
+            Log.d(TAG, "onLocationResult: map == null");
+            return;
+        }
+        map.animateCamera(CameraUpdateFactory.newLatLng(nowmylocation));
     }
 }
